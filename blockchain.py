@@ -1,5 +1,6 @@
 import hashlib
 import json
+from collections import OrderedDict
 
 # initializing you blockchain list
 MINING_REWARD = 10 # given to the person who creates a new block
@@ -48,7 +49,9 @@ def add_transaction(sender, recipient, amount=1.0):
     :param amount:
     :return: append a new value as well as the last blockchain value to the blockchain
     """
-    transaction = {"sender": sender, "recipient": recipient, "amount": amount}
+    # transaction = {"sender": sender, "recipient": recipient, "amount": amount}
+    # ordered dict
+    transaction = OrderedDict([("sender",sender),("recipient",recipient),("amount",amount)])
     if verify_transaction(transaction): # use not to check the tansactions validity
         open_transactions.append(transaction)
         participants.add(sender)
@@ -68,7 +71,8 @@ def mine_block():
     # include the PoF in mining
     proof = proof_of_work()
 
-    reward_transaction = {"sender": "MINING","recipient": owner, "amount": MINING_REWARD}
+    # reward_transaction = {"sender": "MINING","recipient": owner, "amount": MINING_REWARD}
+    reward_transaction = OrderedDict([("sender","MINING"),("recipient",owner),("amount",MINING_REWARD)])
     copied_transacions = open_transactions[:]
     copied_transacions.append(reward_transaction)
     block = {"previous_hash": hashed_block, "index": len(blockchain), "transactions": copied_transacions, "proof": proof}
@@ -125,7 +129,7 @@ def hash_block(block):
     """
     # return "-".join([str(block[key]) for key in block])
 
-    return hashlib.sha256(json.dumps(block).encode()).hexdigest()
+    return hashlib.sha256(json.dumps(block, sort_keys=True).encode()).hexdigest() # we need to ensure that the dictionary is ordered; this way we will have same input string for hash
 
 
 def verify_chain():
