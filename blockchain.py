@@ -1,14 +1,25 @@
+import hashlib
+import json
+
 # initializing you blockchain list
 MINING_REWARD = 10 # given to the person who creates a new block
 genesis_block = {
     "previous_hash": '',
     "index": 0,
-    "transactions": []
+    "transactions": [],
+    "proof": 100
 }
+# Initializing our (empty) blockchain list
 blockchain = [genesis_block]
+# Unhandled transactions
 open_transactions = []
+# We are the owner of this blockchain node, hence this is our identifier
 owner = "Adrian"
+# Registered participants: Ourself + other people sending/receiving coins
 participants = {"Max"}  # set()
+
+
+
 
 
 def get_last_blockchain_value():
@@ -52,12 +63,15 @@ def mine_block():
 
     last_block = blockchain[-1]
     hashed_block = hash_block(last_block)
-    print("hashed_block = "+hashed_block+"\n")
+    print("\nhashed_block = "+hashed_block+"\n")
+
+    # include the PoF in mining
+    proof = proof_of_work()
 
     reward_transaction = {"sender": "MINING","recipient": owner, "amount": MINING_REWARD}
     copied_transacions = open_transactions[:]
     copied_transacions.append(reward_transaction)
-    block = {"previous_hash": hashed_block, "index": len(blockchain), "transactions": copied_transacions}
+    block = {"previous_hash": hashed_block, "index": len(blockchain), "transactions": copied_transacions, "proof": proof}
     blockchain.append(block)
     return True  # so set the opne_transactions to []
 
@@ -109,7 +123,9 @@ def hash_block(block):
     :param block:
     :return: hash version of that block
     """
-    return "-".join([str(block[key]) for key in block])
+    # return "-".join([str(block[key]) for key in block])
+
+    return hashlib.sha256(json.dumps(block).encode()).hexdigest()
 
 
 def verify_chain():
@@ -120,10 +136,11 @@ def verify_chain():
         if index == 0:
             # this is the genesis block so we don't do anything
             continue
-
         if block["previous_hash"] != hash_block(blockchain[index - 1]):
             return False
-
+        if not valid_proof(block["transactions"][:-1], block["previous_hash"], block["proof"]):
+            print("PoF is invalid")
+            return False
     return True
 
 def verify_transactions():
@@ -136,6 +153,26 @@ def verify_transactions():
     #         is_valid = False
     # return is_valid
 
+
+def valid_proof(transactions, last_hash, proof):
+    """
+    Contains the algorithm which generates a new hash and check out difficulty criteria
+    :return:
+    """
+    guess = (str(transactions) + str(last_hash) + str(proof)).encode()
+    guess_hash = hashlib.sha256(guess).hexdigest()
+    print(guess_hash)
+
+    return guess_hash[0:2] == "00" # our condition for valid hash
+
+
+def proof_of_work():
+    last_block = blockchain[-1]
+    last_hash = hash_block(last_block)
+    proof = 0
+    while not valid_proof(open_transactions, last_hash, proof):
+        proof += 1
+    return proof
 
 
 waiting_for_input = True
