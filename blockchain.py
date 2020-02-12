@@ -2,6 +2,8 @@ import hashlib
 import json
 from collections import OrderedDict
 
+import hash_util
+
 # initializing you blockchain list
 MINING_REWARD = 10 # given to the person who creates a new block
 genesis_block = {
@@ -65,7 +67,7 @@ def mine_block():
     # when called all open transactions are added to a block which is then added to the blockchain
 
     last_block = blockchain[-1]
-    hashed_block = hash_block(last_block)
+    hashed_block = hash_util.hash_block(last_block)
     print("\nhashed_block = "+hashed_block+"\n")
 
     # include the PoF in mining
@@ -122,15 +124,6 @@ def print_blockchain_emelents():
         print(block)
 
 
-def hash_block(block):
-    """
-    :param block:
-    :return: hash version of that block
-    """
-    # return "-".join([str(block[key]) for key in block])
-
-    return hashlib.sha256(json.dumps(block, sort_keys=True).encode()).hexdigest() # we need to ensure that the dictionary is ordered; this way we will have same input string for hash
-
 
 def verify_chain():
     """
@@ -164,7 +157,7 @@ def valid_proof(transactions, last_hash, proof):
     :return:
     """
     guess = (str(transactions) + str(last_hash) + str(proof)).encode()
-    guess_hash = hashlib.sha256(guess).hexdigest()
+    guess_hash = hash_util.hash_string_256(guess)
     print(guess_hash)
 
     return guess_hash[0:2] == "00" # our condition for valid hash
@@ -172,7 +165,7 @@ def valid_proof(transactions, last_hash, proof):
 
 def proof_of_work():
     last_block = blockchain[-1]
-    last_hash = hash_block(last_block)
+    last_hash = hash_util.hash_block(last_block)
     proof = 0
     while not valid_proof(open_transactions, last_hash, proof):
         proof += 1
